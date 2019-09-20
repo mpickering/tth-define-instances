@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE RankNTypes #-}
 module Define where
 
 import Generics.SOP
@@ -51,6 +52,12 @@ instance GenericSyntax (BinTree a) where
   sto (SOP (Z Nil)) = [|| Tip ||]
   sto (SOP (S (Z (Comp l :* Comp x :* Comp r :* Nil)))) = [|| Bin $$l $$x $$r ||]
 
+data Compa a where
+  Compa :: Syntax (a -> a -> Ordering) -> Compa a
+
+data Wrapper a where
+  Wrapper :: (a -> a -> Ordering) -> Wrapper a
+
 
 gcompare_1 :: (GenericSyntax a, All (All Ord) (Code a)) => Syntax (a -> a -> Ordering)
 gcompare_1 =
@@ -67,3 +74,22 @@ gcompare_1 =
     go (Z _) (S _) = [|| LT ||]
     go (S _) (Z _) = [|| GT ||]
     go (S x) (S y) = go x y
+
+
+
+gcompare_2 :: GenericSyntax a => POP Compa (Code a) -> Syntax (a -> a -> Ordering)
+gcompare_2 syn =
+  [|| \x y -> $$(sfrom [|| x ||] (\ x' -> sfrom [|| y ||] (\ y' -> go (unPOP syn) (unSOP x') (unSOP y')))) ||]
+  where
+    go :: forall xss . (All (All Top) xss) => NP (NP Compa) xss -> NS (NP SyntaxF) xss -> NS (NP SyntaxF) xss -> Syntax Ordering
+    go (c :* _) (Z x) (Z y) =
+      sapply [|| foldr (<>) EQ ||]
+             (syntactifyList
+             (collapse_NP
+              (zipWith3_NP (\(Compa cf) (Comp a) (Comp b) -> K [|| $$cf $$a $$b ||])
+              c
+              x
+              y)))
+    go _ (Z _) (S _) = [|| LT ||]
+    go _ (S _) (Z _) = [|| GT ||]
+    go (_ :* cs) (S x) (S y) = go cs x y
