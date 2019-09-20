@@ -10,9 +10,9 @@ module Use where
 
 import Define
 
-instance Ord (BinTree Int) where
-  compare = $$(gcompare)
+--instance Ord (BinTree Int) where
+--  compare = $$(gcompare_1)
 
---compareBinTree :: (Ord a, Ord (BinTree a)) => BinTree a -> BinTree a -> Ordering
---compareBinTree = $$(gcompare)
+compareBinTree :: (Ord a, Ord (BinTree a)) => BinTree a -> BinTree a -> Ordering
+compareBinTree = $$(gcompare_1)
 

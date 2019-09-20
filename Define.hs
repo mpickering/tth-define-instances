@@ -52,8 +52,8 @@ instance GenericSyntax (BinTree a) where
   sto (SOP (S (Z (Comp l :* Comp x :* Comp r :* Nil)))) = [|| Bin $$l $$x $$r ||]
 
 
-gcompare :: (GenericSyntax a, All (All Ord) (Code a)) => Syntax (a -> a -> Ordering)
-gcompare =
+gcompare_1 :: (GenericSyntax a, All (All Ord) (Code a)) => Syntax (a -> a -> Ordering)
+gcompare_1 =
   [|| \ x y -> $$(sfrom [|| x ||] (\ x' -> sfrom [|| y ||] (\ y' -> go (unSOP x') (unSOP y')))) ||]
   where
     go :: forall xss . All (All Ord) xss => NS (NP SyntaxF) xss -> NS (NP SyntaxF) xss -> Syntax Ordering
